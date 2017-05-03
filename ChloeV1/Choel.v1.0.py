@@ -1,20 +1,31 @@
+
 import os
 import time
 import sys
+
+import httplib2
+import os
+
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize.api import StringTokenizer
 from slackclient import SlackClient
+from googleapi import upcoming
 
+import datetime
 
 # starterbot's ID as an environment variable
 BOT_NAME = 'chloe'
-SLACK_BOT_TOKEN = 'xoxb-178360606005-xcNQP0n1GNNS8OQtQ7v8lZle'
+SLACK_BOT_TOKEN = 'PASTE TOKEN FROM SLACK PROGRAMMING CHANNEL HERE'
 BOT_ID = "U58ALHU05"
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
 EXAMPLE_COMMAND = "do"
 GREETINGS = ['hi', 'hi!', 'hi', 'hello', 'hello!', 'hey', 'hey!', 'heya', 'heya!']
 
+#google api settings
+SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
+CLIENT_SECRET_FILE = 'client_secret.json'
+APPLICATION_NAME = 'Google Calendar API Python Quickstart'
 
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(SLACK_BOT_TOKEN)
@@ -32,9 +43,14 @@ def handle_command(command, channel):
 		returns back what it needs for clarification.
 	"""
 	tokens = command.split()
-	
 	if command.startswith(EXAMPLE_COMMAND):
-		response = "I can't really do anything right now... I'm just sprouting! :seedling:"
+		response = "I can't really do anything right now... I'm just sprouting! :seedling:"	
+	if command.startswith("commit suicide"):
+		print("recieved command from slack channel to commit suicide")
+		slack_client.api_call("chat.postMessage", channel=channel, text="I-I-i'm so sorry. :weary: :gun:", as_user=True)
+		sys.exit()
+	elif "calendar" in tokens:
+		response = upcoming()
 	elif tokens[0] in GREETINGS:
 		response = "Hi! I'm happy to hear from you. :blush:"
 	else:
@@ -69,6 +85,7 @@ def parse_slack_output(slack_rtm_output):
 				#return text after the @ mention, whitespace removed
 				return output['text'].split(AT_BOT)[1].strip().lower()+" ", output['channel']
 	return None, None
+
 
 
 if __name__ == "__main__":
