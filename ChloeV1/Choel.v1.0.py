@@ -2,6 +2,7 @@ import os
 import time
 import sys
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.tokenize.api import StringTokenizer
 from slackclient import SlackClient
 
 
@@ -12,7 +13,7 @@ BOT_ID = "U58ALHU05"
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
 EXAMPLE_COMMAND = "do"
-GREETINGS = ['hi ', 'hi!', 'hi', 'hello ', 'hello!', 'hey ', 'hey!', 'heya ', 'heya!']
+GREETINGS = ['hi', 'hi!', 'hi', 'hello', 'hello!', 'hey', 'hey!', 'heya', 'heya!']
 
 
 # instantiate Slack & Twilio clients
@@ -30,26 +31,27 @@ def handle_command(command, channel):
 		are valid commands. If so, then acts on the commands. If not,
 		returns back what it needs for clarification.
 	"""
-	sentiment = sentiment_assess(command)
+	tokens = command.split()
 	
-	response = "I'm gauging your mood as " + str(sentiment['compound']) +". "
-	mood = "undefined"
-	if sentiment['compound'] < .2:
-		mood = "confused"
-	elif sentiment['neg'] > sentiment['neu'] and sentiment['neg'] > sentiment['pos']:
-		mood = "bad"
-	elif sentiment['neu'] > sentiment['neg'] and sentiment['neu'] > sentiment['pos']:
-		mood = "ok"
-	else:
-		mood = "good"
-	response = response + "You seem like you're in a(n) " + mood +" mood. "
-	response = response +"Don't take me too seriously though. Have a hug: :hugging_face:"
 	if command.startswith(EXAMPLE_COMMAND):
 		response = "I can't really do anything right now... I'm just sprouting! :seedling:"
+	elif tokens[0] in GREETINGS:
+		response = "Hi! I'm happy to hear from you. :blush:"
 	else:
-		for greet in GREETINGS:
-			if command.startswith(greet):
-				response = "Hi! I'm happy to hear from you. :blush:"
+		sentiment = sentiment_assess(command)
+	
+		response = "I'm gauging your mood as " + str(sentiment['compound']) +". "
+		mood = "undefined"
+		if sentiment['neg'] < .2 and sentiment['neu'] < .2 and sentiment['pos'] < .2:
+			mood = "confused"
+		elif sentiment['neg'] > sentiment['neu'] and sentiment['neg'] > sentiment['pos']:
+			mood = "bad"
+		elif sentiment['neu'] > sentiment['neg'] and sentiment['neu'] > sentiment['pos']:
+			mood = "ok"
+		else:
+			mood = "good"
+		response = response + "You seem like you're in a(n) " + mood +" mood. "
+		response = response +"Don't take me too seriously though. Have a hug: :hugging_face:"
     
 	slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
